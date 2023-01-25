@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="salary">
+
+
+<select id="saList" resultType="salary.SalaryVO">
+        select *
+        from salary
+</select>
+
+<select id="empList" resultType="salary.SalEmpVO">
+		select e.*, d.department_name, s.salary, s.commission_pct,
+		c.company_name, cd.code_name position_name, ccd.code_name employee_pattern_name
+		from employees e left outer join departments d
+		on e.department_id = d.department_id
+		left outer join company c
+		on e.company_cd = c.company_cd
+		left outer join common_code cd
+		on e.position = cd.code_value
+		left outer join common_code ccd
+		on e.employee_pattern = ccd.code_value 
+		left outer join salary s
+		on e.employee_id = s.employee_id
+		order by e.employee_id
+	</select>
+	<select id="departments" resultType="salary.SalEmpVO">
+		SELECT department_id, department_name
+		FROM departments
+		order by department_id
+	</select>
+<select id="empList_d" resultType="salary.SalEmpVO">
+		select e.*, d.department_name, s.salary, s.commission_pct,
+		c.company_name, cd.code_name position_name, ccd.code_name employee_pattern_name
+		from employees e left outer join departments d
+		on e.department_id = d.department_id
+		left outer join company c
+		on e.company_cd = c.company_cd
+		left outer join common_code cd
+		on e.position = cd.code_value
+		left outer join common_code ccd
+		on e.employee_pattern = ccd.code_value left outer join salary s
+		on e.employee_id = s.employee_id
+		where e.department_id = #{department_id}
+		order by e.employee_id
+	</select>
+	<select id="modInfo" resultType="salary.SalEmpVO">
+		select e.*, d.department_name,
+		c.company_name, cd.code_name position_name, ccd.code_name
+		employee_pattern_name, s.salary, s.commission_pct 
+		from employees e left outer join departments d
+		on
+		e.department_id = d.department_id
+		left outer join company c
+		on
+		e.company_cd = c.company_cd
+		left outer join common_code cd
+		on e.position
+		= cd.code_value
+		left outer join common_code ccd
+		on e.employee_pattern =
+		cd.code_value left outer join salary s
+		on e.employee_id = s.employee_id
+	
+		where e.employee_id = #{employee_id}
+	</select>
+	<update id="update_salary">
+	update salary set salary=#{salary}, commission_pct=#{commission_pct}
+	where employee_id = #{employee_id}
+	
+	</update>
+	<insert id="insert_bonus">
+	INSERT into bonus (employee_id, bonus, bonus_comment)
+	values (#{employee_id}, #{bonus}, #{bonus_comment})
+	</insert>
+	
+	<select id='mySalary' resultType='salary.SalEmpVO'>
+		select s.*, e.*, d.department_name, c.code_name position_name, co.company_name, c2.code_name employee_pattern_name  
+		from salary s join employees e
+		on s.employee_id = e.employee_id join departments d
+		on e.department_id = d.department_id join common_code c
+		on e.position = c.code_value join company co
+		on e.company_cd = co.company_cd join common_code c2
+		on e.employee_pattern = c2.code_value
+		where s.employee_id = #{employee_id}
+	</select>
+
+
+
+
+
+<!-- ///////////////////////////////////////////////////////////////////////////////////////////////// -->
+
+	<select id="salaryList" resultType="salary.SalaryVO">
+		select e.employee_id, e.name, c.code_name c_employee_pattern, c2.code_name c_position, 
+		s.salary, s.commission_pct, e.hire_date, d.*
+		from salary s join employees e 
+		on s.employee_id = e.employee_id join common_code c
+		on e.employee_pattern = c.code_value join common_code c2
+		on e.position = c2.code_value join departments d
+		on e.department_id = d.department_id
+		order by e.employee_id
+
+	</select>
+	<select id="salaryList_department_name" resultType="salary.SalaryVO">
+		select e.employee_id, e.name, c.code_name c_employee_pattern, c2.code_name c_position, 
+		s.salary, s.commission_pct, e.hire_date, d.*
+		from salary s join employees e 
+		on s.employee_id = e.employee_id join common_code c
+		on e.employee_pattern = c.code_value join common_code c2
+		on e.position = c2.code_value join departments d
+		on e.department_id = d.department_id
+		where d.department_name = #{department_name}
+		order by e.employee_id
+	</select>
+	
+	<insert id='andInsertBonus'>
+		insert into bonus (employee_id, bonus, bonus_comment)
+		values (#{employee_id}, #{bonus}, #{bonus_comment})
+	</insert>
+	
+	<select id='andBonusList' resultType="salary.BonusVO">
+		select b.*, e.name, e.employee_pattern c_employee_pattern, c.code_name c_position, d.*
+		from bonus b join employees e
+		on b.employee_id = e.employee_id join departments d
+		on e.department_id = d.department_id join common_code c
+		on e.position = c.code_value
+		order by bonus_date desc
+	</select>
+	<select id='andBonusList_department_name' resultType="salary.BonusVO">
+		select b.*, e.name, e.employee_pattern c_employee_pattern, c.code_name c_position, d.*
+		from bonus b join employees e
+		on b.employee_id = e.employee_id join departments d
+		on e.department_id = d.department_id join common_code c
+		on e.position = c.code_value
+		where d.department_name = #{department_name}
+		order by bonus_date desc
+	</select>
+	
+	<update id='andCommissionSave'>
+		update salary
+		set commission_pct = #{commission_pct}
+		where employee_id = #{employee_id}
+	</update>
+	
+	<update id='andSalarySave'>
+		update salary
+		set salary = #{salary}
+		where employee_id = #{employee_id}
+	</update>
+	
+	<select id='andMyBonusList' resultType="salary.BonusVO">
+		select b.*, d.*
+		from bonus b join employees e 
+		on b.employee_id = e.employee_id join departments d 
+		on e.department_id = d.department_id
+		where b.employee_id = #{employee_id}
+		order by bonus_date desc
+	</select>
+	
+	<select id='andMySalaryVo' resultType='salary.SalaryVO'>
+		select s.*, e.*, d.*, c.code_name c_position, c2.code_name c_employee_pattern
+		from salary s join employees e
+		on s.employee_id = e.employee_id join departments d
+		on e.department_id = d.department_id join common_code c
+		on e.position = c.code_value join common_code c2
+		on e.employee_pattern = c2.code_value
+		where s.employee_id = #{employee_id}
+	</select>
+	
+	<select id="andDepartment_name" resultType="salary.SalaryVO">
+		SELECT department_name
+		FROM departments
+		order by department_id
+	</select>
+	
+	<select id="andSalaryName" resultType="salary.SalaryVO">
+		select e.employee_id, e.name, c.code_name c_employee_pattern, c2.code_name c_position, 
+		s.salary, s.commission_pct, e.hire_date, d.*
+		from salary s join employees e 
+		on s.employee_id = e.employee_id join common_code c
+		on e.employee_pattern = c.code_value join common_code c2
+		on e.position = c2.code_value join departments d
+		on e.department_id = d.department_id
+		where e.name = #{name}
+	</select>
+
+</mapper>

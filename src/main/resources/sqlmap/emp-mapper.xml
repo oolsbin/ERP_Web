@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="emp">
+
+	<delete id="delete">
+		delete from employees where employee_id = #{employee_id}
+	</delete>
+	
+	<update id="mypage_update">
+		update employees
+		set 
+		email = #{email}, phone = #{phone}, pw=#{pw}
+		where employee_id =
+		#{employee_id}
+	</update>
+	<update id="update">
+		update employees
+		set department_id =
+		#{department_id}, company_cd = #{company_cd}, name = #{name}
+		,
+		email = #{email}, phone = #{phone}, position =
+		#{position}, employee_pattern = #{employee_pattern}
+		where employee_id =
+		#{employee_id}
+	</update>
+
+	<!-- 사원정보조회 -->
+	<select id="info" resultType="emp.EmpVO">
+		select e.*, d.department_name,
+		c.company_name, cd.code_name position_name, ccd.code_name
+		employee_pattern_name 
+		from employees e left outer join departments d
+		on
+		e.department_id = d.department_id
+		left outer join company c
+		on
+		e.company_cd = c.company_cd
+		left outer join common_code cd
+		on e.position
+		= cd.code_value
+		left outer join common_code ccd
+		on e.employee_pattern =
+		ccd.code_value 
+		
+		where employee_id = #{employee_id}
+	</select>
+
+	<!-- 고용형태조회 -->
+	<select id="employee_pattern" resultType="emp.PatternVO">
+		select
+			code_value employee_pattern, code_name employee_pattern_name
+			from common_code 
+		where code_title = 'H'
+<!-- 		SELECT -->
+<!-- 		E.EMPLOYEE_PATTERN, C.CODE_NAME EMPLOYEE_PATTERN_NAME -->
+<!-- 		FROM EMPLOYEES E -->
+<!-- 		LEFT OUTER JOIN COMMON_CODE C -->
+<!-- 		ON E.EMPLOYEE_PATTERN = C.CODE_VALUE -->
+<!-- 		ORDER BY -->
+<!-- 		EMPLOYEE_PATTERN -->
+	</select>
+
+	<!-- 직급조회 -->
+	<select id="position" resultType="emp.PositionVO">
+			select 
+				code_value  position, code_name position_name
+				from common_code 
+			where code_title = 'E'
+<!-- 		select e.position, c.code_name position_name -->
+<!-- 		from employees e left outer join common_code c -->
+<!-- 		on e.position = c.code_value -->
+<!-- 		order by position -->
+	</select>
+
+	<!-- 사원정보저장 -->
+	<insert id="insert">
+		insert into employees(department_id, company_cd,
+		name, email, phone, admin, position, employee_pattern)
+		values(#{department_id}, '1000', #{name}, #{email}, #{phone} ,#{admin}, #{position}, #{employee_pattern})
+	</insert>
+
+	<!-- 부서목록조회 -->
+	<select id="departments" resultType="emp.DepartmentVO">
+		SELECT department_id, department_name
+		FROM departments
+		order by department_id
+	</select>
+
+	<!-- 사원목록조회 -->
+	<select id="empList" resultType="emp.EmpVO">
+		select e.*, d.department_name,
+		c.company_name, cd.code_name position_name, ccd.code_name employee_pattern_name
+		from employees e left outer join departments d
+		on e.department_id = d.department_id
+		left outer join company c
+		on e.company_cd = c.company_cd
+		left outer join common_code cd
+		on e.position = cd.code_value
+		left outer join common_code ccd
+		on e.employee_pattern = ccd.code_value
+		order by employee_id
+	</select>
+	
+	<select id="empSelect" resultType="emp.EmpVO">
+		select e.*, d.department_name,
+		c.company_name, cd.code_name position_name, ccd.code_name employee_pattern_name
+		from employees e left outer join departments d
+		on e.department_id = d.department_id
+		left outer join company c
+		on e.company_cd = c.company_cd
+		left outer join common_code cd
+		on e.position = cd.code_value
+		left outer join common_code ccd
+		on e.employee_pattern = ccd.code_value
+		where nvl(e.department_id, 0) = #{department_id}
+		order by employee_id
+	</select>
+	
+<!-- 	안드용 -->
+	<select id="andempList" resultType="emp.EmpVO">
+		select e.*, d.department_name,
+		c.company_name, cd.code_name position_name, ccd.code_name employee_pattern_name
+		from employees e left outer join departments d
+		on e.department_id = d.department_id
+		left outer join company c
+		on e.company_cd = c.company_cd
+		left outer join common_code cd
+		on e.position = cd.code_value
+		left outer join common_code ccd
+		on e.employee_pattern = ccd.code_value
+		order by employee_id
+	</select>
+
+	<!-- 회사코드목록 -->
+	<select id="company" resultType="emp.CompanyVO">
+
+		SELECT company_cd, company_name
+		FROM company
+	</select>
+	<!-- //////////////////////////////////////////////////////////////////////////////////// -->
+
+	<select id="andDepartments" resultType="emp.DepartmentVO">
+		SELECT department_id, department_name
+		FROM departments
+		order by department_id
+	</select>
+
+	<select id="andPosition" resultType="emp.PositionVO">
+		select code_name position_name, code_value position
+		from common_code
+		where code_title = 'E'
+		order by code_value
+	</select>
+	
+	<select id="andCompany" resultType="emp.CompanyVO">
+		SELECT company_cd, company_name
+		FROM company
+	</select>
+	<select id="andEmployee_pattern" resultType="emp.PatternVO">
+		select DISTINCT
+		e.employee_pattern, c.code_name employee_pattern_name
+		from employees e
+		left outer join common_code c
+		on e.employee_pattern = c.code_value
+		order by employee_pattern
+	</select>
+	<select id="anddepartment_select" resultType="emp.EmpVO">
+	select e.*, d.department_name,
+		c.company_name, cd.code_name position_name, ccd.code_name employee_pattern_name
+		from employees e left outer join departments d
+		on e.department_id = d.department_id
+		left outer join company c
+		on e.company_cd = c.company_cd
+		left outer join common_code cd
+		on e.position = cd.code_value
+		left outer join common_code ccd
+		on e.employee_pattern = cd.code_value
+	where e.department_id = #{department_id}
+	</select>
+	<select id="andcompany_select" resultType="emp.EmpVO">
+	select e.*, d.department_name,
+		c.company_name, cd.code_name position_name, ccd.code_name employee_pattern_name
+		from employees e left outer join departments d
+		on e.department_id = d.department_id
+		left outer join company c
+		on e.company_cd = c.company_cd
+		left outer join common_code cd
+		on e.position = cd.code_value
+		left outer join common_code ccd
+		on e.employee_pattern = cd.code_value
+	where e.company_cd = #{company}
+	</select>
+	<select id="andposition_select" resultType="emp.EmpVO">
+	select e.*, d.department_name,
+		c.company_name, cd.code_name position_name, ccd.code_name employee_pattern_name
+		from employees e left outer join departments d
+		on e.department_id = d.department_id
+		left outer join company c
+		on e.company_cd = c.company_cd
+		left outer join common_code cd
+		on e.position = cd.code_value
+		left outer join common_code ccd
+		on e.employee_pattern = cd.code_value
+	where e.position = #{position}
+	</select>
+	<select id="andEmp_pattern_select" resultType="emp.EmpVO">
+	select e.*, d.department_name,
+		c.company_name, cd.code_name position_name, ccd.code_name employee_pattern_name
+		from employees e left outer join departments d
+		on e.department_id = d.department_id
+		left outer join company c
+		on e.company_cd = c.company_cd
+		left outer join common_code cd
+		on e.position = cd.code_value
+		left outer join common_code ccd
+		on e.employee_pattern = cd.code_value
+	where EMPLOYEE_PATTERN = #{pattern}
+	</select>
+	<update id="andModify">
+		update employees set department_id = #{department_id}, company_cd = #{company_cd , jdbcType=VARCHAR},
+		position = #{position , jdbcType=VARCHAR}, admin = #{admin , jdbcType=VARCHAR},  employee_pattern = #{employee_pattern , jdbcType=VARCHAR}
+		Where employee_id = #{employee_id}
+	</update>
+	<insert id="andEmpInsert">
+	  insert into employees (department_id, company_cd, name, email, phone, admin, position, employee_pattern)
+        VALUES (#{department_id},#{company_cd , jdbcType=VARCHAR},#{name , jdbcType=VARCHAR},#{email , jdbcType=VARCHAR},#{phone , jdbcType=VARCHAR},#{admin , jdbcType=VARCHAR},#{position , jdbcType=VARCHAR},#{employee_pattern , jdbcType=VARCHAR})
+	</insert>
+	<select id="andEmpCnt" resultType="emp.EmpCntVO">
+	  select COUNT(*) total_dept ,e. department_id , (select COUNT(*) total   from employees)  total_cnt
+     from employees  e 
+     group by e.department_id 
+	</select>
+	<delete id="andDeleteEmployee">
+		delete from employees where employee_id = #{employee_id}
+	</delete>
+
+</mapper>

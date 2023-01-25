@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com">
+
+	<!-- 코드목록 전체조회 -->
+	<select id="codelist" resultType="common.CommonVO">
+		select c.* , e.name code_maker_name
+		from common_code c left join employees e
+		on c.code_maker = e.employee_id
+		order by code_comment
+	</select>
+	
+	<!-- 선택한 코드에 해당하는 목록 가져오기 -->
+	<select id="codelist_select" resultType="common.CommonVO">
+		select distinct c.* , e.name code_maker_name
+		from common_code c left join employees e
+		on code_maker = e.employee_id
+		<choose>
+			<when test="vo.code_comment == 'all' and vo.code_used != 'all'">
+			where code_used = #{vo.code_used}
+			</when>
+			<when test="vo.code_comment != 'all' and vo.code_used == 'all'">
+			where code_comment = #{vo.code_comment}			
+			</when>
+			<when test="vo.code_comment != 'all' and vo.code_used != 'all'">
+			where code_comment = #{vo.code_comment} and code_used = #{vo.code_used}
+			</when>
+		</choose>
+		<!--  
+		<choose>
+			<when test="code == 'code_comment'">where ${code} = #{vo.code_comment}</when>
+			<when test="code == 'code_value'">where ${code} = #{vo.code_value}</when>
+			<when test="code == 'code_used'">where ${code} = #{vo.code_used}</when>
+			<when test="code == 'code_name'">where ${code} = #{vo.code_name}</when>
+		</choose>
+		-->
+		order by code_comment
+	</select>
+
+	<!-- 인사코드 드롭다운 -->
+	<select id="personal_code" resultType="common.CommonVO">
+		select distinct code_comment 
+		from common_code 
+		order by code_comment
+	</select>
+	
+	<!-- 문서코드 드롭다운 -->
+	<select id="document_code" resultType="common.CommonVO">
+		select distinct code_value 
+		from common_code 
+		order by code_value
+	</select>
+	
+	<!-- 고용형태코드 드롭다운 -->
+	<select id="employee_code" resultType="common.CommonVO">
+		select distinct code_used
+		from common_code 
+		order by code_used
+	</select>
+		
+	<!-- 근무구분코드 드롭다운 -->
+	<select id="work_code" resultType="common.CommonVO">
+		select distinct code_name 
+		from common_code 
+		order by code_name
+	</select>
+	
+	<!-- 인사코드 가져오기 -->
+	<!--  
+	<select id="codelist_select" resultType="common.CommonVO">
+		select distinct c.* , e.name code_maker_name
+		from common_code c left join employees e
+		on c.code_maker = e.employee_id
+		where c.code_title = #{code_title}
+		order by code_title
+	</select>
+	-->
+
+	<!-- 특정 사원정보 조회 -->
+	<select id='detail' resultType='common.CommonVO'>
+		select c.* , e.name code_maker_name
+		from common_code c left join employees e
+		on c.code_maker = e.employee_id
+		where c.code_value = #{code_value}
+	</select>
+	
+	<!-- 사원정보 수정저장처리 -->
+	<update id="update">
+		update common_code
+		set code_used = #{code_used}, code_name = #{code_name}, code_birth = sysdate
+		where code_value = #{code_value}
+	</update>
+	
+	<delete id="delete">
+	 	delete from common_code
+	 	where code_value = #{code_value}
+	</delete>
+	
+	
+	<!-- 특정 코드 조회 -->
+	<select id='check_code' resultType='common.CommonVO'>
+		select c.* , e.name code_maker_name
+		from common_code c left join employees e
+		on c.code_maker = e.employee_id
+		where c.code_name = #{code_name}
+	</select>
+	
+	
+	<!-- /////////////////////////////////////////////////////////////// -->
+	
+	<!-- 안드의 코드전체조회 -->
+	<select id="andSelect" resultType="common.CommonVO">
+		select c.code_comment, c.code_value, c.code_used, c.code_name, c.code_birth, e.name code_maker_name
+		from common_code c left join employees e
+		on c.code_maker = e.employee_id
+		order by code_comment
+	</select>
+	
+	<!-- 안드의 코드 인사이름 조회 -->
+	<select id="andSpinnerList" resultType="common.CommonVO">
+		select distinct code_comment
+		from common_code 
+		order by code_comment
+	</select>
+	
+	<!-- 스피너 선택(value)시 나올 값 -->
+	<select id="andSpinnerValuelist" resultType="common.CommonVO">
+		select c.code_comment, c.code_value, c.code_used, c.code_name, c.code_birth, e.name code_maker_name
+		from common_code c left join employees e
+		on c.code_maker = e.employee_id
+        where code_comment =#{code_comment}
+		order by code_comment
+	</select>
+	
+	<select id="andCodeListOne" resultType="common.CommonVO">
+		select c.code_comment, c.code_value, c.code_used, c.code_name, c.code_birth, e.name code_maker_name
+		from common_code c left join employees e
+		on c.code_maker = e.employee_id
+		where code_value = #{code_value}
+	</select>
+	
+	<update id="andUpdate">
+		update common_code set code_comment = #{code_comment, jdbcType=VARCHAR}
+		, code_used = #{code_used, jdbcType=VARCHAR}, code_name = #{code_name, jdbcType=VARCHAR}, code_maker = #{code_maker}
+		where code_value = #{code_value, jdbcType=VARCHAR}
+	</update>
+	
+<!-- 	update common_code c left join employees e set c.code_comment = #{code_comment}, c.code_value=#{code_value} -->
+<!-- 		, c.code_used = #{code_used}, code_birth = sysdate, c.code_name = #{code_name}, e.code_maker_name = #{code_maker_name} -->
+<!-- 		on c.code_maker = e.employee_id -->
+<!-- 		where code_value = #{code_value} -->
+	
+	
+
+
+</mapper>

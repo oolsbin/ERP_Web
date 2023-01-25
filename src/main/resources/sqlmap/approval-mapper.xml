@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="approval">
+
+	<!-- 상신함 뷰 -->
+	<select id='submitList' resultType='approval.Ing_tableVO'>
+		select row_number() over(order by document_date asc) no, i.*,
+		e2.name approver, c.code_name c_status, c2.code_name c_position
+
+		from employees e join ing_table i
+		on e.employee_id = i.employee_id join employees e2
+		on i.approver_id = e2.employee_id join common_code c
+		on i.document_check = c.code_value join common_code c2
+		on e2.position = c2.code_value
+
+		where e.employee_id = #{employee_id} and i.document_submit = 'Y'
+		order by no desc
+	</select>
+
+	<!-- 보관함 뷰 -->
+	<select id='lockerList' resultType='approval.Ing_tableVO'>
+		select row_number() over(order by document_date asc) no, i.*
+		from employees e join ing_table i
+		on e.employee_id = i.employee_id
+		where e.employee_id = #{employee_id, jdbcType=VARCHAR} and
+		i.document_submit = 'N'
+		order by no desc
+	</select>
+
+	<!-- 수신함 뷰 -->
+	<select id='receiveList' resultType='approval.Ing_tableVO'>
+		select row_number() over(order by document_date asc) no, i.*,
+		e2.name drafter, c.code_name c_status, c2.code_name c_position
+
+		from employees e join ing_table i
+		on e.employee_id = i.approver_id join employees e2
+		on i.employee_id = e2.employee_id join common_code c
+		on i.document_check = c.code_value join common_code c2
+		on e2.position = c2.code_value
+
+		where e.employee_id = #{employee_id, jdbcType=VARCHAR} and
+		i.document_submit = 'Y'
+		order by no desc
+	</select>
+
+	<!-- 결재함 뷰 -->
+	<select id='approvalList' resultType='approval.Result_tableVO'>
+		SELECT row_number() over(order by document_date asc) no,
+		r.*, e.name drafter, e2.name approver, c.code_name c_status,
+		c2.code_name approver_position, c3.code_name drafter_position
+
+		FROM result_table r join employees e
+		on r.employee_id = e.employee_id join employees e2
+		on r.approver_id = e2.employee_id join common_code c
+		on r.document_check = c.code_value join common_code c2
+		on e2.position = c2.code_value join common_code c3
+		on e.position = c3.code_value
+
+		WHERE r.employee_id = #{employee_id} and r.document_submit = 'Y'
+		or r.approver_id = #{employee_id} and r.document_submit = 'Y'
+
+		order by no desc
+
+
+	</select>
+
+	<!-- 결재함 뷰 - 선택된 목록 -->
+	<select id='approvalListPart'
+		resultType='approval.Result_tableVO'>
+		SELECT row_number() over(order by document_date asc) no,
+		r.*, e.name drafter, e2.name approver, c.code_name c_status,
+		c2.code_name approver_position, c3.code_name drafter_position
+
+		FROM result_table r join employees e
+		on r.employee_id = e.employee_id join employees e2
+		on r.approver_id = e2.employee_id join common_code c
+		on r.document_check = c.code_value join common_code c2
+		on e2.position = c2.code_value join common_code c3
+		on e.position = c3.code_value
+
+		WHERE r.employee_id = #{employee_id} and r.document_submit = 'Y' and
+		c.code_value = #{code_value, jdbcType=VARCHAR}
+		or r.approver_id = #{employee_id} and r.document_submit = 'Y' and
+		c.code_value = #{code_value, jdbcType=VARCHAR}
+
+		order by no desc
+
+
+	</select>
+
+	<!-- 기안 제출 저장 처리 -->
+	<insert id='insertPost'>
+		insert into ing_table (employee_id, department_id, company_cd,
+		document_title, document_content, approver_id,
+		document_submit, document_comment, file_name, file_path)
+		values (#{employee_id, jdbcType=VARCHAR}, #{department_id,
+		jdbcType=VARCHAR},
+		#{company_cd, jdbcType=VARCHAR}, #{document_title, jdbcType=VARCHAR},
+		#{document_content, jdbcType=VARCHAR}, #{approver_id,
+		jdbcType=VARCHAR}, 'Y',
+		#{document_comment, jdbcType=VARCHAR}, #{file_name, jdbcType=VARCHAR}, #{file_path,
+		jdbcType=VARCHAR})
+	</insert>
+
+	<!-- 기안 제출 저장 처리 -->
+	<insert id='insertResult'>
+		insert into result_table (employee_id, department_id, company_cd,
+		document_title, document_content, approver_id,
+		document_submit, document_comment, finish_date, file_name, file_path)
+		values (#{employee_id, jdbcType=VARCHAR}, #{department_id,
+		jdbcType=VARCHAR},
+		#{company_cd, jdbcType=VARCHAR}, #{document_title, jdbcType=VARCHAR},
+		#{document_content, jdbcType=VARCHAR}, #{approver_id,
+		jdbcType=VARCHAR}, 'Y',
+		#{document_comment, jdbcType=VARCHAR}, #{finish_date, jdbcType=VARCHAR},
+		#{file_name, jdbcType=VARCHAR}, #{file_pat h, jdbcType=VARCHAR})
+	</insert>
+
+	<!-- 기안 처리 후 결과 테이블에 저장 처리 -->
+	<insert id='insertResultEnd'>
+		insert into result_table (employee_id, department_id, company_cd,
+		document_title, document_content, approver_id,
+		document_submit, document_comment, document_check, file_name, file_path, finish_date)
+		select employee_id, department_id, company_cd, document_title,
+		document_content, approver_id,
+		document_submit, #{document_comment}, #{document_check}, file_name, file_path, sysdate
+		from ing_table
+		where ing_no = #{ing_no}
+		<!-- insert into result_table (employee_id, department_id, company_cd, 
+			document_title, document_content, approver_id, document_submit, document_comment, 
+			document_check, finish_date) values (#{employee_id, jdbcType=VARCHAR}, #{department_id, 
+			jdbcType=VARCHAR}, #{company_cd, jdbcType=VARCHAR}, #{document_title, jdbcType=VARCHAR}, 
+			#{document_content, jdbcType=VARCHAR}, #{approver_id, jdbcType=VARCHAR}, 
+			'Y', #{document_comment, jdbcType=VARCHAR}, #{document_check, jdbcType=VARCHAR}, 
+			sysdate) -->
+	</insert>
+
+	<!-- <update id='updateIng'> -->
+	<!-- update ing_table -->
+	<!-- set document_check = #{document_check}, document_comment = #{document_comment}, 
+		finish_date = #{finish_date} -->
+	<!-- where ing_no = #{ing_no} -->
+	<!-- </update> -->
+
+	<!-- 기안 임시보관함 저장 처리 -->
+	<insert id='insertLocker'>
+		insert into ing_table (employee_id, department_id, company_cd,
+		document_title, document_content, approver_id,
+		document_submit, file_path, file_name)
+		values (#{employee_id, jdbcType=VARCHAR}, #{department_id,
+		jdbcType=VARCHAR},
+		#{company_cd, jdbcType=VARCHAR}, #{document_title, jdbcType=VARCHAR},
+		#{document_content, jdbcType=VARCHAR}, #{approver_id,
+		jdbcType=VARCHAR}, 'N',
+		#{file_path, jdbcType=VARCHAR}, #{file_name, jdbcType=VARCHAR})
+	</insert>
+
+	<!-- 특정 부서에 소속된 직원 리스트를 찾는다 -->
+	<select id='departmentEmployee' resultType='emp.EmpVO'>
+		select e.*, d.department_name, c.code_name c_position
+		from employees e join departments d
+		on e.department_id = d.department_id join common_code c
+		on e.position = c.code_value
+		where d.department_name = #{department_name} and e.employee_id not
+		in(#{employee_id})
+		order by c.code_value desc, hire_date asc
+	</select>
+
+	<select id='submitListDetail' resultType='approval.Ing_tableVO'>
+		select *
+		from (
+		select row_number() over(order by document_date asc) no, i.*, e2.name
+		approver,
+		c.code_name c_status, c2.code_name c_position
+
+		from employees e join ing_table i
+		on e.employee_id = i.employee_id join employees e2
+		on i.approver_id = e2.employee_id join common_code c
+		on i.document_check = c.code_value join common_code c2
+		on e2.position = c2.code_value
+
+		where e.employee_id = #{employee_id, jdbcType=VARCHAR} and
+		i.document_submit = 'Y'
+		order by no desc
+		)
+		where no = #{no}
+
+		<!-- select * -->
+		<!-- from ( select row_number() over(order by document_date asc) no, i.* -->
+		<!-- from ing_table i -->
+		<!-- order by no desc ) -->
+		<!-- where no = 1 -->
+	</select>
+
+	<select id='lockerListDetail' resultType='approval.Ing_tableVO'>
+		select *
+		from (
+		select row_number() over(order by document_date asc) no, i.*
+		from employees e join ing_table i
+		on e.employee_id = i.employee_id
+		where e.employee_id = #{employee_id, jdbcType=VARCHAR} and
+		i.document_submit = 'N'
+		order by no desc
+		)
+		where no = #{no}
+	</select>
+
+	<!-- 보관함 디테일단에서 삭제 -->
+	<delete id='deleteIng'>
+		delete ing_table
+		where ing_no = #{ing_no}
+	</delete>
+
+	<select id='receiveListDetail' resultType='approval.Ing_tableVO'>
+		select *
+		from
+		(
+		select row_number() over(order by document_date asc) no, i.*,
+		e2.name drafter, c.code_name c_status, c2.code_name c_position
+
+		from employees e join ing_table i
+		on e.employee_id = i.approver_id join employees e2
+		on i.employee_id = e2.employee_id join common_code c
+		on i.document_check = c.code_value join common_code c2
+		on e2.position = c2.code_value
+
+		where e.employee_id = #{employee_id} and i.document_submit = 'Y'
+		order by no desc
+		)
+		where no = #{no}
+	</select>
+
+	<!-- method for select btn -->
+	<select id='document_checks' resultType='approval.Common_codeVO'>
+		select code_value, code_name--, i.document_check
+		from common_code
+		where code_title='D'
+	</select>
+
+	<select id='approvalListDetail'
+		resultType='approval.Result_tableVO'>
+		select *
+		from (
+		SELECT row_number() over(order by document_date asc) no,
+		r.*, e.name drafter, e2.name approver, c.code_name c_status,
+		c2.code_name approver_position, c3.code_name drafter_position
+
+		FROM result_table r join employees e
+		on r.employee_id = e.employee_id join employees e2
+		on r.approver_id = e2.employee_id join common_code c
+		on r.document_check = c.code_value join common_code c2
+		on e2.position = c2.code_value join common_code c3
+		on e.position = c3.code_value
+
+		WHERE r.employee_id = #{employee_id} and r.document_submit = 'Y'
+		or r.approver_id = #{employee_id} and r.document_submit = 'Y'
+
+		order by no desc
+		)
+		where no = #{no}
+	</select>
+
+	<!-- 보관함 리스트에서 체크박스로 다수 게시글 한꺼번에 삭제 -->
+	<delete id='deleteLocker'>
+		delete ing_table
+		where ing_no in (${checkList})
+	</delete>
+
+
+	<!-- for approvalList's select menu tag -->
+	<select id='document_check' resultType='approval.Common_codeVO'>
+		select *
+		from common_code
+		where code_title = 'D'
+	</select>
+
+	<!-- 앤드로이ㄷㄷㄷㄷ -->
+
+	<select id="andRecList" resultType="approval.And_Ing_tableVO">
+		  select i.*, d1.department_name emp_dpmt_name, d2.department_name app_dpmt_name,  e1.name emp_name, e2.name app_name, c.company_name, cd.code_name check_name,
+              cd1.code_name emp_position_name, cd2.code_name app_position_name, e1.position emp_position, e2.position app_position
+              from ing_table i left outer join departments d1
+              on i.department_id = d1.department_id left outer join employees e1 
+              on i.employee_id = e1.employee_id left outer join company c
+              on i.company_cd = c.company_cd left outer join common_code cd
+              on i.DOCUMENT_CHECK = cd.code_value left outer join employees e2
+              on i.approver_id = e2.employee_id left outer join departments d2
+              on e2.department_id = d2.department_id left outer join common_code cd1
+              on e1.position = cd1.code_value left outer join common_code cd2
+              on e2.position = cd2.code_value
+              where approver_id = #{employee_id}
+              order by i.ing_no
+	</select>
+
+<!-- 안드 -->
+<!-- //////////////////////////////////////////////////////////////// -->
+
+<select id="andTempList" resultType="approval.Ing_tableVO">
+	select i.* , e.name employee_name from ing_table i
+	left outer join  employees e 
+	on e.employee_id = i.employee_id
+	where i.document_submit = 'N'
+
+</select>
+
+
+<select id="andWriteList" resultType="approval.And_Ing_tableVO">
+  select i.*, d1.department_name emp_dpmt_name, d2.department_name app_dpmt_name,  e1.name emp_name, e2.name app_name, c.company_name, cd.code_name check_name,
+              cd1.code_name emp_position_name, cd2.code_name app_position_name, e1.position emp_position, e2.position app_position
+              from ing_table i left outer join departments d1
+              on i.department_id = d1.department_id left outer join employees e1 
+              on i.employee_id = e1.employee_id left outer join company c
+              on i.company_cd = c.company_cd left outer join common_code cd
+              on i.document_check = cd.code_value left outer join employees e2
+              on i.approver_id = e2.employee_id left outer join departments d2
+              on e2.department_id = d2.department_id left outer join common_code cd1
+              on e1.position = cd1.code_value left outer join common_code cd2
+              on e2.position = cd2.code_value
+              where i.employee_id = #{employee_id} and document_submit = 'Y'
+              order by i.ing_no
+</select>
+
+<update id = "andTempUpdate">
+	update ing_table 
+	set document_submit = 'Y'
+	where ing_no = #{ing_no}
+</update>
+<delete id="andTempDelete">
+	delete from ing_table 
+	where ing_no = #{ing_no}
+</delete>
+<update id="andTempModify">
+update ing_table
+set document_title = #{document_title}, document_content = #{document_content}, document_date = sysdate
+where ing_no = #{ing_no}
+
+</update>
+<select id="andTempListOne" resultType="approval.Ing_tableVO">
+	select * from ing_table
+	where ing_no = #{ing_no}
+
+</select>
+<select id="andApproval_list" resultType="approval.Result_tableVO">
+SELECT row_number() over(order by document_date asc) no, 
+r.*, e.name drafter, e2.name approver, c.code_name c_status,
+c2.code_name approver_position, c3.code_name drafter_position
+
+FROM result_table r join employees e
+on r.employee_id = e.employee_id join employees e2
+on r.approver_id = e2.employee_id join common_code c
+on r.document_check = c.code_value join common_code c2
+on e2.position = c2.code_value join common_code c3
+on e.position = c3.code_value
+where r.document_check = 'D102' or r.document_check = 'D103'
+</select>
+
+
+<select id="andRecsign" resultType="approval.And_Ing_tableVO">
+ 	select code_value document_check, code_name check_name
+    from common_code
+    where code_title = 'D'
+</select>
+<insert id="andRecConfirm">
+	insert into result_table (employee_id, department_id, company_cd,
+		document_title, document_content, approver_id,
+		document_submit, document_comment, document_check, file_name, file_path, finish_date)
+		select employee_id, department_id, company_cd, document_title,
+		document_content, approver_id,
+		document_submit, #{document_comment}, #{document_check}, file_name, file_path, sysdate
+		from ing_table
+		where ing_no = #{ing_no}
+</insert>
+<delete id="andRecCencel">
+	delete
+	from ing_table
+	where ing_no = #{ing_no}
+</delete>
+
+	<select  id="andCodeList" resultType="approval.Result_tableVO">
+		SELECT row_number() over(order by document_date asc) no, 
+r.*, e.name drafter, e2.name approver, c.code_name c_status,
+c2.code_name approver_position, c3.code_name drafter_position from result_table r join employees e 
+on r.employee_id = e.employee_id join employees e2
+on r.approver_id = e2.employee_id join common_code c
+on r.document_check =c.code_value join common_code c2
+on e2.position = c2.code_value join common_code c3 
+on e.position = c3.code_value
+where document_check = #{document_check}
+	</select>
+	
+	
+	<select id="andResult_code" resultType="approval.Result_tableVO">
+	select distinct r.document_check ,c.code_name c_status
+    from common_code c 
+    left outer join result_table r
+    on c.code_value = r.document_check
+    where  code_title ='D' 
+	</select>
+	<select id="andFirstDep" resultType="approval.And_Ing_tableVO">
+	 select department_id, department_name emp_dpmt_name
+              from departments
+	</select>
+	<select id="andSecondDep" resultType="approval.And_Ing_tableVO">
+	  select c.code_name || ' ' || e.name emp_name, e.employee_id
+              from employees e join common_code c
+              on e.position = c.code_value
+              where e.department_id = #{department_id}
+              order by e.employee_id
+	</select>
+	<insert id="andIngInsert">
+		   insert into ing_table (employee_id, department_id, company_cd,  document_title, document_content,approver_id,document_submit )
+              values (#{employee_id}, #{department_id}, #{company_cd}, #{document_title}, #{document_content}, #{approver_id}, 'Y')
+	</insert>
+	<insert id="andResultInsert">
+	  insert into result_table (employee_id, department_id, company_cd,  document_title, document_content,approver_id,document_submit )
+              values (#{employee_id}, #{department_id}, #{company_cd}, #{document_title}, #{document_content}, #{approver_id}, 'Y')
+	</insert>
+	<insert id="andIngNotInsert">
+		 insert into ing_table (employee_id, department_id, company_cd,
+		document_title, document_content, approver_id,
+		document_submit, file_path, file_name)
+		values (#{employee_id, jdbcType=VARCHAR}, #{department_id,
+		jdbcType=VARCHAR},
+		#{company_cd, jdbcType=VARCHAR}, #{document_title, jdbcType=VARCHAR},
+		#{document_content, jdbcType=VARCHAR}, #{approver_id,
+		jdbcType=VARCHAR}, 'N',
+		#{file_path, jdbcType=VARCHAR}, #{file_name, jdbcType=VARCHAR})
+		</insert>
+	
+
+</mapper>

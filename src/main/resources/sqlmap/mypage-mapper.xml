@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="mypage">
+
+<select id="memberList" resultType="mypage.MemberVO">
+select * from member
+
+
+</select>
+
+<select id="memberInfo" resultType="mypage.MemberVO">
+select * from member
+where email = #{email}
+
+
+</select>
+<update id="memberUpdate">
+update member set
+name = #{name}, gender = #{gender}, phone = #{phone}, address = #{address}
+where email = #{email}
+
+</update>
+
+<select id="employee_id" resultType="Integer">
+select employee_id 
+from employees
+where email = #{email}
+
+</select>
+
+<select id="empMember" resultType="mypage.EmpMemberVO">
+select e.*, d.department_name, c.company_name, cd.code_name position_name, 
+(select cd.code_name from employees e, common_code cd where e.employee_id = ${employee_id} AND e.employee_pattern = cd.code_value) employee_pattern_name
+from employees e, departments d, company c, common_code cd
+where e.employee_id = ${employee_id} AND e.department_id = d.department_id AND e.company_cd = c.company_cd AND e.position = cd.code_value
+
+
+</select>
+
+<!-- 안드!!!!!!!!!!!!!!!!!!! -->
+
+<update id="andUpdate">
+update employees set
+phone = #{phone}, email = #{email}, pw=#{pw}
+where employee_id = #{employee_id}
+</update>
+
+</mapper>

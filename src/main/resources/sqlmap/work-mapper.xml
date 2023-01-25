@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="work">
+
+
+	<!-- 개인 출근 정보 출력 -->
+	<select id="workInfo" resultType="work.WorkVO">
+		SELECT *
+		FROM work
+		where
+		employee_id = #{employee_id}
+
+	</select>
+	<select id="workResult" resultType="work.WorkResultVO">
+		SELECT w.employee_id,w.start_work,w.end_work,
+		to_char (w.work_date ,'yyyy-MM-dd') work_date
+		 , c.code_name work_status 
+		FROM work_result w left outer join common_code c
+		on w.work_code = c.code_value
+		where
+		w.employee_id = #{employee_id}
+		order by work_date desc
+
+	</select>
+	
+
+	<select id="departments" resultType="emp.DepartmentVO">
+		select * from departments order by department_name
+
+	</select>
+	<select id="department_work" resultType="work.WorkResultVO">
+		select e.employee_id employee_id , e.name name ,e. phone  phone ,w.start_work start_work,
+        w.end_work  end_work , d.department_name department_name,c.code_name work_status,
+        to_char (w.work_date ,'yyyy-MM-dd') work_date
+        from employees e left outer join 
+        work_result w
+        on e.employee_id = w.employee_id
+        left outer join departments d 
+        on e.department_id = d.department_id
+        left outer join
+        common_code c
+        on w.work_code = c.code_value
+        where nvl(e.department_id, 0) = #{department_id} and   to_char ( w.work_date,'yyyy-MM-dd')  = #{work_date} 
+        order by start_work
+
+	</select>
+
+
+
+	<select id="list" resultType="work.WorkResultVO">
+	select e.employee_id employee_id ,d.department_id department_id, e.name name ,e. phone  phone ,w.start_work start_work,
+        w.end_work  end_work , d.department_name department_name, c.code_name work_status,
+        to_char (w.work_date ,'yyyy-MM-dd') work_date
+        from employees e left outer join 
+        work w
+        on e.employee_id = w.employee_id
+        left outer join departments d 
+        on e.department_id = d.department_id
+        left outer join common_code c 
+        on w.work_code = c.code_value
+        order by start_work
+	</select>
+	
+	
+
+	<!-- null값인 퇴근시간에 update 처리 -->
+	<update id="end_work">
+		UPDATE work
+		SET end_work = #{end_work}
+		WHERE
+		employee_id= #{employee_id}
+	</update>
+	<update id="andEnd_work">
+		UPDATE work
+		SET end_work = #{end_work}
+		WHERE
+		employee_id= #{employee_id}
+	</update>
+
+	<!-- 출근 시간 등록 -->
+	<insert id="start_work">
+		insert into work
+		(employee_id, department_id,
+		company_cd,start_work, work_code)
+		values(#{employee_id},#{department_id},#{company_cd},
+		#{start_work},'W101')
+	</insert>
+	<insert id="andStart_work">
+		insert into work
+		(employee_id, department_id,
+		company_cd,start_work, work_code)
+		values(#{employee_id},#{department_id},#{company_cd},
+		#{start_work},'W101')
+	</insert>
+
+	<!-- 연차사용 내역 -->
+
+	<select id="holiday_list" resultType="work.WorkResultVO">
+		select w.*, c.code_name
+		work_status
+		from work_result w left join common_code c
+		on w.work_code =
+		c.code_value
+		where employee_id = #{employee_id} and work_code ='HO101' or
+		work_code ='HO102'
+	</select>
+
+	<!-- 로그인한 아이디의 출근정보만 출력 -->
+
+	<select id="empInfo" resultType="emp.EmpVO">
+		<!-- select e.*, c.code_name position_name from employees e left join common_code 
+			c on e.position = c.code_value where e.employee_id = '20221015' -->
+
+		SELECT e.*, c.code_name position_name,
+		TRUNC(MONTHS_BETWEEN(SYSDATE,
+		hire_date) / 12) hire_year
+		FROM employees e left join common_code c
+		on
+		e.position = c.code_value
+		where e.employee_id = #{employee_id}
+
+
+	</select>
+
+
+	<select id="codeList" resultType="work.CommonCodeVO">
+		select *
+		from common_code
+		where
+		code_title = 'HO'
+
+	</select>
+
+	<!-- 휴가신청 -->
+
+	<insert id="holiday_submit">
+<![CDATA[
+	INSERT INTO 
+holiday(holiday_date, employee_id, department_id,company_cd,work_code)
+ SELECT TO_DATE(#{start_holiday},'YYYY-MM-DD') + LEVEL - 1 AS dates , #{employee_id},#{department_id},#{company_cd},#{work_code}
+   FROM dual 
+CONNECT BY LEVEL <= 
+(TO_DATE(#{end_holiday , jdbcType=VARCHAR},'YYYY-MM-DD')
+	-
+TO_DATE(#{start_holiday, jdbcType=VARCHAR},'YYYY-MM-DD')+1)
+]]>
+	</insert>
+	<insert id="andHoliday">
+<![CDATA[
+	INSERT INTO 
+holiday(holiday_date, employee_id, department_id,company_cd,work_code)
+ SELECT TO_DATE(#{start_holiday},'YYYY-MM-DD') + LEVEL - 1 AS dates , #{employee_id},#{department_id},#{company_cd},#{work_code}
+   FROM dual 
+CONNECT BY LEVEL <= 
+(TO_DATE(#{end_holiday , jdbcType=VARCHAR},'YYYY-MM-DD')
+	-
+TO_DATE(#{start_holiday, jdbcType=VARCHAR},'YYYY-MM-DD')+1)
+]]>
+	</insert>
+
+	<select id="holiday_submit_list"
+		resultType="work.HolidayResultVO">
+		select h.*, c.code_name work_status
+		from holiday_result h left join
+		common_code c
+		on h.work_code = c.code_value
+		where h.employee_id = #{employee_id}
+			</select>
+	<select id="holidayList" resultType="work.HolidayVO">
+		select h.* , c.code_name work_status
+		from holiday h left join common_code c
+		on h.work_code = c.code_value
+		where h.employee_id = #{employee_id}
+		order by holiday_date asc
+
+	</select>
+	<select id="holidayAllList" resultType="work.HolidayVO">
+		select h.* , c.code_name work_status, e.name name
+		from holiday h left join common_code c
+		on h.work_code = c.code_value left outer join employees e
+		on e.employee_id = h.employee_id
+		order by work_date asc
+
+	</select>
+	
+	<select id="search" resultType="work.WorkVO">
+		select start_work
+		from work
+		where employee_id = #{employee_id}	
+	</select>
+	
+	
+	
+	<select id="andEndSearch" resultType="work.WorkVO">
+		select end_work 
+		from work
+		where employee_id = #{employee_id}	
+	</select>
+	<select id="andCode" resultType="work.CommonCodeVO">
+		select * from common_code where code_title ='HO'
+	</select>
+	<select id="andHolidaySearch" resultType="work.HolidayVO" >
+		select holiday_date from holiday where holiday_date = #{holiday_date} and employee_id =  #{employee_id}
+	
+	</select>
+	
+	<select id="andHoliday_List" resultType="work.HolidayVO">
+		select h.employee_id ,e.name name, d.department_name dname, c.code_name work_code,h.holiday_date,TRUNC(MONTHS_BETWEEN(SYSDATE,
+		hire_date) / 12) hire_year
+		from holiday h 
+		left outer join common_code c 
+		on h.work_code = c.code_value
+		left outer join departments d
+		on h.department_id = d.department_id
+		left outer join employees e
+		on h.employee_id = e.employee_id
+
+	</select>
+	<select id="andHolidayDept_List" resultType="work.HolidayVO">
+		select h.employee_id ,e.name name, d.department_name dname, c.code_name work_code,h.holiday_date,TRUNC(MONTHS_BETWEEN(SYSDATE,
+		hire_date) / 12) hire_year
+		from holiday h 
+		left outer join common_code c 
+		on h.work_code = c.code_value
+		left outer join departments d
+		on h.department_id = d.department_id
+		left outer join employees e
+		on h.employee_id = e.employee_id
+		where h.department_id = #{department_id}
+	</select>
+	
+	<select id="andHolidayIndi_List" resultType="work.WorkResultVO">
+	select to_char( w.work_date,'yyyy-MM-DD hh:mm:ss') as work_date ,
+w.DEPARTMENT_ID,w. EMPLOYEE_ID, w.COMPANY_CD, w.START_WORK, w.END_WORK, w.WORK_CODE
+, c.code_name work_status
+		, d.department_name , e.name name
+		from work_result w left join
+		common_code c
+		on w.work_code = c.code_value 
+		left outer join departments	d
+		on w.department_id = d.department_id 
+		left outer join employees e
+		on w.employee_id = e.employee_id
+		where w.employee_id = #{employee_id}
+		order by work_date desc
+	</select>
+
+<select id="findToday" resultType="work.WorkVO">
+	Select * from work where employee_id = #{employee_id}
+	</select>
+
+</mapper>

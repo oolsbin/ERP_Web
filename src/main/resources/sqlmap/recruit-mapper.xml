@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="recruit">
+
+<delete id="delete">
+delete from recruit_board where recruit_num = #{recruit_num}
+</delete>
+
+
+<select id="currval" resultType="String">
+select seq_recruit_num.currval from dual
+</select>
+
+
+<update id="update">
+update recruit_board set recruit_num=#{recruit_num}, recruit_start=#{recruit_start}, employee_pattern=#{employee_pattern}
+,recruit_end=#{recruit_end}, recruit_title=#{recruit_title}, recruit_content=#{recruit_content}
+,file_name=#{file_name, jdbcType=VARCHAR}, file_path=#{file_path, jdbcType=VARCHAR}
+,career=#{career, jdbcType=VARCHAR}
+,company=#{company, jdbcType=VARCHAR}
+,salary=#{salary, jdbcType=VARCHAR}
+
+where recruit_num = #{recruit_num}
+
+</update>
+
+<select id="detail_company" resultType="recruit.RecruitVO">
+select  code_name, company_name
+
+from recruit_board r, common_code c, company com
+where r.career = c.code_value
+and  recruit_num = #{recruit_num}
+</select>
+
+<select id="detail_company_com" resultType="recruit.RecruitVO">
+select  r.*, code_name, company_name
+
+from recruit_board r, common_code c, company com
+where r.career = c.code_value
+</select>
+
+<select id="detail" resultType="recruit.RecruitVO">
+
+select  r.*, code_name
+
+,to_char(r.recruit_start,'yyyy-mm-dd') char_recruit_start, to_char(r.recruit_end,'yyyy-mm-dd') char_recruit_end
+
+
+from recruit_board r, common_code c
+where r.employee_pattern = c.code_value
+and  recruit_num = #{recruit_num}
+</select>
+
+
+<select id="list" resultType="recruit.RecruitVO">
+select r.*, 
+
+c.code_name employee_pattern_name , cd.code_name career_name
+,to_char(r.recruit_start,'yyyy-mm-dd') char_recruit_start, to_char(r.recruit_end,'yyyy-mm-dd') char_recruit_end
+from recruit_board r 
+left outer join common_code c
+on r.employee_pattern = c.code_value 
+left outer join common_code cd
+on r.career = cd.code_value
+order by r.recruit_start
+</select>
+
+<select id="list_code" resultType="recruit.RecruitVO">
+select r.*, 
+
+c.code_name employee_pattern_name , cd.code_name career_name
+,to_char(r.recruit_start,'yyyy-mm-dd') char_recruit_start, to_char(r.recruit_end,'yyyy-mm-dd') char_recruit_end
+from recruit_board r left outer join common_code c
+on r.employee_pattern = c.code_value left outer join common_code cd
+on r.career = cd.code_value
+where r.employee_pattern = #{employee_pattern}
+order by r.recruit_start
+
+
+</select>
+<select id="list_code_career" resultType="recruit.RecruitVO">
+select r.*, c.code_name
+,to_char(r.recruit_start,'yyyy-mm-dd') char_recruit_start, to_char(r.recruit_end,'yyyy-mm-dd') char_recruit_end
+from recruit_board r, common_code c
+where r.employee_pattern = c.code_value
+and career = #{career}
+order by r.recruit_start
+</select>
+
+
+<select id="pattern" resultType="recruit.CommonCodeVO">
+select *
+from common_code
+where code_title = 'H'
+</select>
+<select id="pattern_career" resultType="recruit.CommonCodeVO">
+select *
+from common_code
+where code_title = 'C'
+</select>
+<select id="pattern_company" resultType="recruit.CompanyVO">
+select *
+from company
+</select>
+
+
+<insert id='insert'>
+<!-- <![CDATA[ -->
+insert into recruit_board
+(recruit_num, file_name, file_path, 
+recruit_start, recruit_end, 
+recruit_title, recruit_content, employee_pattern
+,salary, career, company
+)
+values (
+seq_recruit_num.nextval, #{file_name, jdbcType=VARCHAR}, #{file_path, jdbcType=VARCHAR}
+, #{recruit_start}, #{recruit_end}
+, #{recruit_title, jdbcType=VARCHAR}
+, #{recruit_content, jdbcType=VARCHAR}
+, #{employee_pattern, jdbcType=VARCHAR}
+, #{salary, jdbcType=VARCHAR}
+, #{career, jdbcType=VARCHAR}
+, #{company, jdbcType=VARCHAR})
+ 
+</insert>
+ 
+<!--  
+<choose>
+	<when test='employee_pattern == -1'>,'H101'</when>
+	<otherwise>,'H102'</otherwise>
+</choose> -->
+
+
+
+
+<!-- ]]> -->
+
+
+<!-- ///////////////////////////안드로이드 /////////////////// -->
+<select id="andSelect" resultType="recruit.RecruitVO">
+select r.*, 
+cp.company_name,
+c.code_name employee_pattern_name , cd.code_name career_name
+,to_char(r.recruit_start,'yyyy-mm-dd') char_recruit_start, to_char(r.recruit_end,'yyyy-mm-dd') char_recruit_end
+from recruit_board r left outer join common_code c
+on r.employee_pattern = c.code_value left outer join common_code cd
+on r.career = cd.code_value left outer join company cp
+on r.company = cp.company_cd
+order by recruit_num desc
+</select>
+<select id="andMyList" resultType="recruit.AndApplyVO">
+select r.company, r.career, r.salary, r.recruit_content, r.recruit_title, r.employee_pattern, r.recruit_end, r.recruit_start, a.*, cp.company_name,
+c.code_name employee_pattern_name , cd.code_name career_name
+,to_char(r.recruit_start,'yyyy-mm-dd') char_recruit_start, to_char(r.recruit_end,'yyyy-mm-dd') char_recruit_end
+from recruit_board r left outer join common_code c
+on r.employee_pattern = c.code_value left outer join apply_board a
+on r.recruit_num = a.recruit_num
+left outer join common_code cd
+on r.career = cd.code_value left outer join company cp
+on r.company = cp.company_cd
+where a.APPLY_NAME = #{name}
+</select>
+<select id="andApplySpinnerList" resultType="recruit.RecruitVO">
+select DISTINCT r.career, c.code_name career_name
+from recruit_board r left outer join common_code c
+on r.career = c.code_value
+</select>
+<select id="andApplySpinnerCareerList" resultType="recruit.RecruitVO">
+select r.*, 
+cp.company_name,
+c.code_name employee_pattern_name , cd.code_name career_name
+,to_char(r.recruit_start,'yyyy-mm-dd') char_recruit_start, to_char(r.recruit_end,'yyyy-mm-dd') char_recruit_end
+from recruit_board r left outer join common_code c
+on r.employee_pattern = c.code_value left outer join common_code cd
+on r.career = cd.code_value left outer join company cp
+on r.company = cp.company_cd
+Where r.career = #{career}
+order by recruit_num desc
+</select>
+
+<select id="andApplyCheckSelect" resultType="recruit.RecruitVO">
+select r.*, 
+cp.company_name,
+c.code_name employee_pattern_name , cd.code_name career_name
+,to_char(r.recruit_start,'yyyy-mm-dd') char_recruit_start, to_char(r.recruit_end,'yyyy-mm-dd') char_recruit_end
+from recruit_board r left outer join common_code c
+on r.employee_pattern = c.code_value left outer join common_code cd
+on r.career = cd.code_value left outer join company cp
+on r.company = cp.company_cd
+order by recruit_num desc
+
+</select>
+<select id="andApplyCheckSelectList" resultType="recruit.AndApplyVO">
+select r.RECRUIT_NUM, r.RECRUIT_START, r.RECRUIT_END, r.EMPLOYEE_PATTERN, r.RECRUIT_TITLE, r.RECRUIT_CONTENT, r.SALARY, r.CAREER, r.COMPANY ,
+a.APPLY_EMAIL, a.APPLY_NUM, a.APPLY_NAME, a.FILE_NAME, a.FILE_PATH,a.APPLY_DATE,a.APPLY_PW, a.APPLY_PHONE, a.APPLY_CHECK, a.APPLY_PIC_NAME, a.APPLY_PIC_PATH,
+c.code_name employee_pattern_name , cd.code_name career_name
+from recruit_board r left outer join apply_board a
+on r.recruit_num = a.recruit_num left outer join
+common_code c
+on r.employee_pattern = c.code_value left outer join common_code cd
+on r.career = cd.code_value left outer join company cp
+on r.company = cp.company_cd 
+where a.apply_check = 'N'
+
+</select>
+<select id="andApplyCheckSelectOne" resultType="recruit.AndApplyVO">
+select r.RECRUIT_NUM, r.RECRUIT_START, r.RECRUIT_END, r.EMPLOYEE_PATTERN, r.RECRUIT_TITLE, r.RECRUIT_CONTENT, r.SALARY, r.CAREER, r.COMPANY ,
+a.APPLY_EMAIL, a.APPLY_NUM, a.APPLY_NAME, a.FILE_NAME, a.FILE_PATH,a.APPLY_DATE,a.APPLY_PW, a.APPLY_PHONE, a.APPLY_CHECK, a.APPLY_PIC_NAME, a.APPLY_PIC_PATH,
+c.code_name employee_pattern_name , cd.code_name career_name
+from recruit_board r left outer join apply_board a
+on r.recruit_num = a.recruit_num left outer join
+common_code c
+on r.employee_pattern = c.code_value left outer join common_code cd
+on r.career = cd.code_value left outer join company cp
+on r.company = cp.company_cd
+where r.recruit_title = #{title} AND a.apply_check = 'N'
+
+</select>
+<select id="andApplyPassSelectList" resultType="recruit.AndApplyVO">
+select r.RECRUIT_NUM, r.RECRUIT_START, r.RECRUIT_END, r.EMPLOYEE_PATTERN, r.RECRUIT_TITLE, r.RECRUIT_CONTENT, r.SALARY, r.CAREER, r.COMPANY ,
+a.APPLY_EMAIL, a.APPLY_NUM, a.APPLY_NAME, a.FILE_NAME, a.FILE_PATH,a.APPLY_DATE,a.APPLY_PW, a.APPLY_PHONE, a.APPLY_CHECK, 
+c.code_name employee_pattern_name , cd.code_name career_name
+from recruit_board r left outer join apply_board a
+on r.recruit_num = a.recruit_num left outer join
+common_code c
+on r.employee_pattern = c.code_value left outer join common_code cd
+on r.career = cd.code_value left outer join company cp
+on r.company = cp.company_cd 
+where a.apply_check = 'Y'
+
+</select>
+<select id="andApplyPassSelectOne" resultType="recruit.AndApplyVO">
+select r.RECRUIT_NUM, r.RECRUIT_START, r.RECRUIT_END, r.EMPLOYEE_PATTERN, r.RECRUIT_TITLE, r.RECRUIT_CONTENT, r.SALARY, r.CAREER, r.COMPANY ,
+a.APPLY_EMAIL, a.APPLY_NUM, a.APPLY_NAME, a.FILE_NAME, a.FILE_PATH,a.APPLY_DATE,a.APPLY_PW, a.APPLY_PHONE, a.APPLY_CHECK, 
+c.code_name employee_pattern_name , cd.code_name career_name
+from recruit_board r left outer join apply_board a
+on r.recruit_num = a.recruit_num left outer join
+common_code c
+on r.employee_pattern = c.code_value left outer join common_code cd
+on r.career = cd.code_value left outer join company cp
+on r.company = cp.company_cd
+where r.recruit_title = #{title} AND a.apply_check = 'Y'
+
+</select>
+<update id="andApplyPassORFail">
+update apply_board set apply_check = #{apply_check}
+where apply_phone = #{apply_phone}
+</update>
+
+</mapper>

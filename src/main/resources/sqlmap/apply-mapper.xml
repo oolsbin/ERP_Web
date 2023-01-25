@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="apply">
+
+<select id="pass" resultType="apply.ApplyVO">
+select apply_check,
+decode (apply_check, 'Y', '합격',  
+ 'N', '대기중', 
+ '불합격' ) as "checkPass" 
+ from apply_board
+ group by apply_check
+
+</select>
+
+
+
+<!-- 사원 저장처리 후 합격자리스트 삭제 -->
+
+<delete id="delete_pass">
+delete from apply_board where apply_num = #{apply_num}
+
+</delete>
+
+
+
+
+
+<select id="applicant_list" resultType="apply.ApplyVO">
+select a.*, recruit_title,
+ decode (apply_check, 'Y', '합격',  
+ 'N', '대기중', 
+ '불합격' ) as "checkPass" 
+from apply_board a, recruit_board r
+where a.recruit_num = r.recruit_num
+order by apply_num
+</select>
+
+<select id="applicant_list_num" resultType="apply.ApplyVO">
+select a.*, recruit_title,
+ decode (apply_check, 'Y', '합격',  
+ 'N', '대기중', 
+ '불합격' ) as "checkPass" 
+from apply_board a, recruit_board r
+where a.recruit_num = r.recruit_num
+and a.recruit_num=#{recruit_num}
+order by apply_num
+</select>
+<select id="applicant_list_num_check" resultType="apply.ApplyVO">
+select a.*, recruit_title,
+ decode (apply_check, 'Y', '합격',  
+ 'N', '대기중', 
+ '불합격' ) as "checkPass" 
+from apply_board a, recruit_board r
+where a.recruit_num = r.recruit_num
+and a.recruit_num=#{recruit_num}
+and a.apply_check=#{apply_check}
+order by apply_num
+</select>
+<select id="applicant_list_check" resultType="apply.ApplyVO">
+select a.*, recruit_title,
+ decode (apply_check, 'Y', '합격',  
+ 'N', '대기중', 
+ '불합격' ) as "checkPass" 
+from apply_board a, recruit_board r
+where a.recruit_num = r.recruit_num
+
+and a.apply_check=#{apply_check}
+order by apply_num
+</select>
+
+<select id="pass_list" resultType="apply.ApplyVO">
+select a.*, recruit_title 
+from apply_board a, recruit_board r
+where a.recruit_num = r.recruit_num
+and apply_check='Y'
+</select>
+
+<select id="pass_list_num" resultType="apply.ApplyVO">
+select a.*, recruit_title 
+from apply_board a, recruit_board r
+where a.recruit_num = r.recruit_num
+and a.recruit_num=#{recruit_num, jdbcType=VARCHAR}
+and apply_check='Y'
+</select>
+
+
+<select id="recruit_num" resultType="apply.RecruitVO">
+select recruit_num, recruit_title
+from recruit_board
+
+
+</select>
+<select id="update_check">
+update apply_board set apply_check = #{apply_check}
+where apply_num = #{apply_num}
+</select>
+
+<select id="update">
+	update apply_board set apply_name = #{apply_name}, 
+	apply_email = #{apply_email}, apply_phone=#{apply_phone}
+	,file_name=#{file_name, jdbcType=VARCHAR}, file_path=#{file_path, jdbcType=VARCHAR}
+	,apply_pic_name=#{apply_pic_name, jdbcType=VARCHAR}
+	,apply_pic_path=#{apply_pic_path, jdbcType=VARCHAR}
+
+	where apply_num = #{apply_num}
+</select>
+
+
+<select id="phone_check" resultType="Integer">
+	select count(apply_phone) from apply_board where apply_phone = #{apply_phone}
+</select>
+
+
+<select id="apply_check" resultType="apply.ApplyVO">
+select * from apply_board
+where apply_phone=#{apply_phone} and apply_pw=#{apply_pw}
+</select>
+
+
+<delete id="delete">
+delete from apply_board where apply_num = #{apply_num}
+</delete>
+
+
+<select id="apply_info" resultType="apply.ApplyVO">
+<!-- select *
+from apply_board 
+where apply_num= #{apply_num} -->
+
+select a.*, r.recruit_title
+from apply_board a, recruit_board r
+where a.recruit_num = r.recruit_num
+and apply_num = #{apply_num}
+
+</select>
+<select id="recruit_info" resultType="apply.RecruitVO">
+<!-- select *
+from apply_board 
+where apply_num= #{apply_num} -->
+
+select *
+from recruit_board
+where recruit_num = #{recruit_num}
+
+</select>
+
+
+<insert id="insert">
+insert into apply_board (
+recruit_num, apply_email, apply_num, 
+apply_name, file_name, file_path, apply_phone,apply_pw
+,apply_pic_name, apply_pic_path
+)
+values (
+#{recruit_num} ,#{apply_email, jdbcType=VARCHAR} , seq_apply_num.nextval 
+,#{apply_name} ,#{file_name, jdbcType=VARCHAR} ,#{file_path, jdbcType=VARCHAR} 
+,#{apply_phone}, #{apply_pw}
+,#{apply_pic_name, jdbcType=VARCHAR}
+,#{apply_pic_path, jdbcType=VARCHAR}
+
+)
+
+<!-- apply_check -->
+</insert>
+
+
+<select id="currval" resultType="Integer">
+select seq_apply_num.currval from dual
+</select>
+
+
+<select id="recruit_pattern" resultType="apply.CommonCodeVO">
+select *
+from common_code
+where code_title = 'H'
+</select>
+
+<select id="recruit_list" resultType="apply.RecruitVO">
+<!-- select r.*, c.code_name
+,to_char(r.recruit_start,'yyyy-mm-dd') char_recruit_start, to_char(r.recruit_end,'yyyy-mm-dd') char_recruit_end
+from recruit_board r, common_code c
+where r.employee_pattern = c.code_value
+order by r.recruit_start -->
+select r.*, 
+
+c.code_name employee_pattern_name , cd.code_name career_name
+,to_char(r.recruit_start,'yyyy-mm-dd') char_recruit_start, to_char(r.recruit_end,'yyyy-mm-dd') char_recruit_end
+from recruit_board r 
+left outer join common_code c
+on r.employee_pattern = c.code_value 
+left outer join common_code cd
+on r.career = cd.code_value
+order by r.recruit_start
+
+</select>
+
+<select id="recruit_list_code" resultType="apply.RecruitVO">
+
+<!-- select r.*, c.code_name
+,to_char(r.recruit_start,'yyyy-mm-dd') char_recruit_start, to_char(r.recruit_end,'yyyy-mm-dd') char_recruit_end
+from recruit_board r, common_code c
+where r.employee_pattern = c.code_value
+and employee_pattern = #{employee_pattern}
+order by r.recruit_start -->
+select r.*, 
+
+c.code_name employee_pattern_name , cd.code_name career_name
+,to_char(r.recruit_start,'yyyy-mm-dd') char_recruit_start, to_char(r.recruit_end,'yyyy-mm-dd') char_recruit_end
+from recruit_board r left outer join common_code c
+on r.employee_pattern = c.code_value left outer join common_code cd
+on r.career = cd.code_value
+where r.employee_pattern = #{employee_pattern}
+order by r.recruit_start
+
+</select>
+<!-- 안드로이드 -->
+
+
+</mapper>

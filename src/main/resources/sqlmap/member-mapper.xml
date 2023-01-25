@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="member">
+
+
+<!-- 회원가입 아이디 중복체크 -->
+<select id='checkId' resultType='integer'>
+select count(employee_id) from employees where employee_id = #{employee_id}
+</select>
+
+<!-- 로그인할 때 아이디와 비밀번호 맞는지 확인 + 관리자 정보  -->
+<select id='checkLogin' resultType='emp.EmpVO'>
+select *
+from employees
+where employee_id = #{employee_id} and pw = #{pw}
+</select>
+
+
+
+<!-- 안드로이드 /////////////////////////////////////////////////////////////////////////////// -->
+
+<select id='andCheckLogin' resultType="member.AndLoginMemberVO">
+select employee_id, pw
+from employees 
+
+</select>
+
+
+
+<select id='andLogin' resultType="member.AndLoginMemberVO">
+select  e.*, d.department_name, c.company_name, cd.code_name position_name,  ccd.code_name employee_pattern_name
+from employees e 
+left outer join departments d
+on e.department_id = d.department_id
+left outer join company c
+on e.company_cd = c.company_cd
+left outer join common_code cd 
+on e.position = cd.code_value
+left outer join common_code ccd
+on e.employee_pattern = cd.code_value
+where e.employee_id = #{id}
+
+</select>
+
+
+
+
+
+
+
+
+</mapper>
